@@ -17,35 +17,31 @@ NEW, CODE_VERIFIES, DONE, PHOTO_STEP = ("new", "code_verified", "done", "photo_s
 
 
 class User(AbstractUser, BaseModel):
-    USER_ROLES = (
-        (ORDINARY_USER, ORDINARY_USER),
-        (MANAGER, MANAGER),
-        (ADMIN, ADMIN),
-    )
-    AUTH_TYPE_CHOICES = (
-        (VIA_EMAIL, VIA_EMAIL),
-        (VIA_PHONE_NUMBER, VIA_PHONE_NUMBER),
-    )
+    USER_ROLES = ((ORDINARY_USER, ORDINARY_USER), (MANAGER, MANAGER), (ADMIN, ADMIN))
+    AUTH_TYPE_CHOICES = ((VIA_PHONE_NUMBER, VIA_PHONE_NUMBER), (VIA_EMAIL, VIA_EMAIL))
     AUTH_STATUS = (
         (NEW, NEW),
         (CODE_VERIFIES, CODE_VERIFIES),
         (DONE, DONE),
         (PHOTO_STEP, PHOTO_STEP),
     )
+
     user_roles = models.CharField(
         max_length=31, choices=USER_ROLES, default=ORDINARY_USER
     )
-    AUTH_TYPE = models.CharField(max_length=31, choices=AUTH_TYPE_CHOICES)
-    AUTH_STATUS = models.CharField(max_length=31, choices=AUTH_STATUS, default=NEW)
-    email = models.EmailField(null=True, unique=True)
-    phone_number = models.CharField(max_length=14, null=True, unique=True)
+    auth_type = models.CharField(max_length=31, choices=AUTH_TYPE_CHOICES)
+    auth_status = models.CharField(max_length=31, choices=AUTH_STATUS, default=NEW)
+    email = models.EmailField(null=True, blank=True, unique=True)
+    phone_number = models.CharField(max_length=13, null=True, blank=True, unique=True)
     photo = models.ImageField(
         upload_to="user_photos/",
         null=True,
         blank=True,
-        validators=FileExtensionValidator(
-            allowed_extensions=["jpg", "jpeg", "png", "heic", "heif"]
-        ),
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=["jpg", "jpeg", "png", "heic", "heif"]
+            )
+        ],
     )
 
     def __str__(self):
@@ -56,29 +52,31 @@ class User(AbstractUser, BaseModel):
         return f"{self.first_name} {self.last_name}"
 
     def create_verify_code(self, verify_type):
-        code = "".join([str(random.randint((0, 100) % 10)) for _ in range(4)])
+        code = "".join([str(random.randint(0, 10000) % 10) for _ in range(4)])
         UserConfirmation.objects.create(
-            user_id=self.id,
-            verify_type=verify_type,
-            code=code,
+            user_id=self.id, verify_type=verify_type, code=code
         )
         return code
 
     def check_username(self):
         if not self.username:
-            tepm_username = f"instagram-{uuid.uuid4().__str__().split('-')[-1]}"
-            while User.objects.filter(username=tepm_username):
-                tepm_username = f"{tepm_username}{random.randint(0, 9)}"
-            self.username = tepm_username
+            temp_username = f'instagram-{uuid.uuid4().__str__().split("-")[-1]}'  # instagram-23324fsdf
+            while User.objects.filter(username=temp_username):
+                temp_username = f"{temp_username}{random.randint(0,9)}"
+            self.username = temp_username
 
     def check_email(self):
         if self.email:
-            normolize_email = self.email.lower()
-            self.email = normolize_email
+            normalize_email = (
+                self.email.lower()
+            )  # aKhamdjon@gmail.com -> akhamdjon@gmail.com
+            self.email = normalize_email
 
-    def check_password(self):
+    def check_pass(self):
         if not self.password:
-            temp_password = f"password-{uuid.uuid4().__str__().split('-')[-1]}"
+            temp_password = (
+                f'password-{uuid.uuid4().__str__().split("-")[-1]}'  #  123456mfdsjfkd
+            )
             self.password = temp_password
 
     def hashing_password(self):
@@ -87,21 +85,17 @@ class User(AbstractUser, BaseModel):
 
     def token(self):
         refresh = RefreshToken.for_user(self)
-        return {
-            "access": str(refresh.access_token),
-            "refresh_token": str(refresh),
-        }
-
-    def clean(self):
-        self.check_username()
-        self.check_email()
-        self.check_password()
-        self.hashing_password()
+        return {"access": str(refresh.access_token), "refresh_token": str(refresh)}
 
     def save(self, *args, **kwargs):
-        if not self.pk:
-            self.clean
+        self.clean()
         super(User, self).save(*args, **kwargs)
+
+    def clean(self):
+        self.check_email()
+        self.check_username()
+        self.check_pass()
+        self.hashing_password()
 
 
 PHONE_EXPIRE = 2
