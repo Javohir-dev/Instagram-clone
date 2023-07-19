@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Your verify code:<input
+        id="textbox"
+        style="
+            border: none;
+            background: white; 
+            font-weight: bold; 
+            font-size: 26px; 
+            color: blue; 
+            padding: 0 5px"
+        value="{{ code }}"
+        disabled/></h1>
+        <br />
+    <button onclick="copyText()">Copy code</button>
+  
+    <script>
+        function copyText() {
+      
+            /* Select text area by id*/
+            var Text = document.getElementById("textbox");
+  
+            /* Select the text inside text area. */
+            Text.select();
+  
+            /* Copy selected text into clipboard */
+            navigator.clipboard.writeText(Text.value);
+        }
+    </script>
+</body>
+</html>
