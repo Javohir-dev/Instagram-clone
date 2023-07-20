@@ -1,5 +1,7 @@
 import threading
 import phonenumbers
+from decouple import config
+from twilio.rest import Client
 
 import re
 from rest_framework.exceptions import ValidationError
@@ -61,4 +63,15 @@ def send_email(email, code):
             "body": html_content,
             "content_type": "html",
         }
+    )
+
+
+def send_phone_code(phone, code):
+    account_sid = config("account_sid")
+    auth_token = config("auth_token")
+    client = Client(account_sid, auth_token)
+    client.messages.create(
+        body=f"Assalomu aleykum! Sizning tasdiqlash kodingiz: {code}\n",
+        from_="+998885394422",
+        to=phone,
     )
