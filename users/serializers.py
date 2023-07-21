@@ -1,4 +1,4 @@
-from rest_framework.fields import empty
+from django.contrib.auth.password_validation import validate_password
 
 from shared.utility import check_email_or_phone, send_email
 from .models import (
@@ -86,3 +86,65 @@ class SignUpSerializer(serializers.ModelSerializer):
         data.update(instance.token())
 
         return data
+
+
+class ChangeUserInformation(serializers.Serializer):
+    first_name = serializers.CharField(write_only=True, required=True)
+    last_name = serializers.CharField(write_only=True, required=True)
+    username = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, required=True)
+    confirm_password = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, data):
+        password = data.get("password", None)
+        confirm_password = data.get("confirm_password", None)
+        if password != confirm_password:
+            raise ValidationError({"message": "Parollar bir xil bo'lishi shart!"})
+        if password:
+            validate_password(password)
+            validate_password(confirm_password)
+
+        return data
+
+    def validate_username(self, username):
+        if len(username) < 5 or len(username) > 30:
+            raise ValidationError(
+                {
+                    "message": "The username must be between 5 and 30 characters long.",
+                }
+            )
+        if username.isdigit():
+            raise ValidationError({"message": "The username is entirely numberic."})
+
+        return username
+
+    def validate_user_information(self, data):
+        first_name = data.get("first_name", None)
+        last_name = data.get("last_name", None)
+        if first_name and last_name:
+            if (len(first_name) and len(last_name)) < 3 and (
+                len(first_name) and len(last_name)
+            ) > 20:
+                raise ValidationError(
+                    {
+                        "message": "The firstname and lastname must be between 3 and 20 characters long."
+                    }
+                )
+        else:
+            raise ValidationError({"message": "Firstname or lastname is empty."})
+
+        return data
+
+    def update(self, instance, validated_data):
+        instance.first_name = validated_data.get("first_name", instance.first_name)
+        instance.last_name = validated_data.get("last_name", instance.last_name)
+        instance.password = validated_data.get("password", instance.password)
+        instance.username = validated_data.get("username", instance.username)
+
+        if validated_data.get("password"):
+            instance.set_password(validated_data.get("password"))
+        if instance.auth_status == CODE_VERIFIES:
+            instance.auth_status = DONE
+        instance.save()
+
+        return instance

@@ -3,7 +3,7 @@ from django.shortcuts import render
 
 from rest_framework.exceptions import ValidationError
 from rest_framework import permissions, status
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -11,7 +11,7 @@ from rest_framework.decorators import permission_classes
 
 from shared.utility import send_email
 
-from .serializers import SignUpSerializer
+from .serializers import SignUpSerializer, ChangeUserInformation
 from .models import (
     VIA_EMAIL,
     CODE_VERIFIES,
@@ -62,6 +62,8 @@ class VerifyAPIView(APIView):
 
 
 class GetNewVerification(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request, *args, **kwargs):
         user = self.request.user
         self.check_verification(user)
@@ -92,3 +94,32 @@ class GetNewVerification(APIView):
         if verifies.exists():
             data = {"message": "Sizda kod mavjud, biroz kuting..."}
             raise ValidationError(data)
+
+
+class ChangeUserInformationView(UpdateAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ChangeUserInformation
+    http_method_names = ["patch", "put"]
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        super(ChangeUserInformationView, self).update(request, *args, **kwargs)
+        data = {
+            "success": True,
+            "message": "User updated successfully",
+            "auth_status": self.request.user.auth_status,
+        }
+
+        return Response(data, status=200)
+
+    def partial_update(self, request, *args, **kwargs):
+        super(ChangeUserInformationView, self).partial_update(request, *args, **kwargs)
+        data = {
+            "success": True,
+            "message": "User updated successfully",
+            "auth_status": self.request.user.auth_status,
+        }
+
+        return Response(data, status=200)
