@@ -11,7 +11,11 @@ from rest_framework.decorators import permission_classes
 
 from shared.utility import send_email
 
-from .serializers import SignUpSerializer, ChangeUserInformation
+from .serializers import (
+    ChangeUserPhotoSerializer,
+    SignUpSerializer,
+    ChangeUserInformation,
+)
 from .models import (
     VIA_EMAIL,
     CODE_VERIFIES,
@@ -123,3 +127,19 @@ class ChangeUserInformationView(UpdateAPIView):
         }
 
         return Response(data, status=200)
+
+
+class ChangeUserPhotoView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def put(self, request, *args, **kwargs):
+        serializer = ChangeUserPhotoSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            serializer.update(user, serializer.validated_data)
+            return Response(
+                {"message": "Rasm muvaffaqiyatli o'zgartirildi"}, status=200
+            )
+        return Response(serializer.errors, status=400)

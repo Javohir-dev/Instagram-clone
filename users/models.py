@@ -13,7 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 ORDINARY_USER, MANAGER, ADMIN = ("ordinary_user", "manager", "admin")
 VIA_EMAIL, VIA_PHONE_NUMBER = ("via_email", "via_phone_number")
-NEW, CODE_VERIFIES, DONE, PHOTO_STEP = ("new", "code_verified", "done", "photo_step")
+NEW, CODE_VERIFIES, DONE, PHOTO_DONE = ("new", "code_verified", "done", "photo_step")
 
 
 class User(AbstractUser, BaseModel):
@@ -23,7 +23,7 @@ class User(AbstractUser, BaseModel):
         (NEW, NEW),
         (CODE_VERIFIES, CODE_VERIFIES),
         (DONE, DONE),
-        (PHOTO_STEP, PHOTO_STEP),
+        (PHOTO_DONE, PHOTO_DONE),
     )
 
     user_roles = models.CharField(
