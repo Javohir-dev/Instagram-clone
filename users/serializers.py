@@ -1,7 +1,9 @@
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import authenticate
 from django.core.validators import FileExtensionValidator
+from django.db.models import Q
 
-from shared.utility import check_email_or_phone, send_email
+from shared.utility import check_email_or_phone, check_user_type, send_email
 from .models import (
     User,
     UserConfirmation,
@@ -13,8 +15,8 @@ from .models import (
     PHOTO_DONE,
 )
 from rest_framework import exceptions
-from django.db.models import Q
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import ValidationError
 
 
@@ -167,3 +169,54 @@ class ChangeUserPhotoSerializer(serializers.Serializer):
             instance.auth_status = PHOTO_DONE
             instance.save()
         return instance
+
+
+class LoginSerializer(TokenObtainPairSerializer):
+    def __init__(self, *args, **kwargs):
+        super(LoginSerializer, self).__init__(*args, **kwargs)
+        self.fields["userinput"] = serializers.CharField(required=True)
+        self.fields["username"] = serializers.CharField(required=False, read_only=True)
+
+    def get_user(self, **kwargs):
+        users = User.objects.filter(**kwargs)
+        if not users.exists():
+            raise ValidationError(
+                {
+                    "message": "No active account found",
+                }
+            )
+
+        return users.first()
+
+    def auth_validate(self, data):
+        user_input = data.get("userinput")
+
+        if check_user_type(user_input) == "username":
+            username = user_input
+        elif check_user_type(user_input) == "email":
+            user = self.get_user(email__iexact=user_input)
+            username = user.username
+        elif check_user_type(user_input) == "phone":
+            user = self.get_user(phone_number=user_input)
+            username = user.username
+        else:
+            data = {
+                "success": False,
+                "message": "You must enter an email or phone number.",
+            }
+            raise ValidationError(data)
+
+        authentication_kwargs = {
+            self.username_field: username,
+            "password": data["password"],
+        }
+        corrent_user = User.objects.filter(username__iexact=username).first()
+        if corrent_user.auth_status in [NEW, CODE_VERIFIES]:
+            raise ValidationError(
+                {
+                    "success": False,
+                    "message": "Siz ro'yxatdan to'liq o'tmagansiz.",
+                },
+            )
+
+        user = authenticate()
