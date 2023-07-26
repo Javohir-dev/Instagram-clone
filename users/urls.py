@@ -8,6 +8,7 @@ from .views import (
     LogInView,
     LogInRefreshView,
     LogOutView,
+    ForgotPasswordView,
 )
 from django.urls import path
 
@@ -21,4 +22,5 @@ urlpatterns = [
     path("new-verify/", GetNewVerification.as_view()),
     path("change-info/", ChangeUserInformationView.as_view()),
     path("change-user-photo/", ChangeUserPhotoView.as_view()),
+    path("forgot-password/", ForgotPasswordView.as_view()),
 ]

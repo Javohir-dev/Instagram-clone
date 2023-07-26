@@ -18,7 +18,7 @@ from .models import (
 from rest_framework import exceptions
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
@@ -263,3 +263,25 @@ class LoginRefreshSerializer(TokenRefreshSerializer):
 
 class LogOutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email_or_phone = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        email_or_phone = attrs.get("email_or_phone", None)
+        if email_or_phone is None:
+            raise ValidationError(
+                {
+                    "success": False,
+                    "message": "You must enter email or phone number",
+                }
+            )
+        user = User.objects.filter(
+            Q(phone_number=email_or_phone) | Q(email=email_or_phone)
+        )
+        if not user.exists():
+            raise NotFound(detail="No users found")
+        attrs["user"] = user.first()
+
+        return attrs

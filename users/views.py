@@ -6,7 +6,7 @@ from rest_framework import permissions
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes
 
@@ -15,12 +15,14 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from shared.utility import send_email
 
 from .serializers import (
+    check_email_or_phone,
     ChangeUserPhotoSerializer,
     SignUpSerializer,
     ChangeUserInformation,
     LoginSerializer,
     LoginRefreshSerializer,
     LogOutSerializer,
+    ForgotPasswordSerializer,
 )
 from .models import (
     VIA_EMAIL,
@@ -180,3 +182,33 @@ class LogOutView(APIView):
             return Response(data, status=205)
         except TokenError:
             return Response(status=400)
+
+
+class ForgotPasswordView(APIView):
+    serializer_class = ForgotPasswordSerializer
+    permission_classes = [
+        AllowAny,
+    ]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        email_or_phone = serializer.validated_data.get("email_or_phone")
+        user = serializer.validated_data.get("user")
+        if check_email_or_phone(email_or_phone) == "phone":
+            code = user.create_verify_code(VIA_PHONE_NUMBER)
+            send_email(email_or_phone, code)
+        elif check_email_or_phone(email_or_phone) == "email":
+            code = user.create_verify_code(VIA_EMAIL)
+            send_email(email_or_phone, code)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Verify's code has been successfully sent.",
+                "access": user.token()["access"],
+                "refresh": user.token()["refresh_token"],
+                "user_status": user.auth_status,
+            },
+            status=200,
+        )
