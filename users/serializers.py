@@ -17,7 +17,7 @@ from .models import (
 from rest_framework import exceptions
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -211,7 +211,10 @@ class LoginSerializer(TokenObtainPairSerializer):
             "password": data["password"],
         }
         corrent_user = User.objects.filter(username__iexact=username).first()
-        if corrent_user.auth_status in [NEW, CODE_VERIFIES]:
+        if corrent_user is not None and corrent_user.auth_status in [
+            NEW,
+            CODE_VERIFIES,
+        ]:
             raise ValidationError(
                 {
                     "success": False,
@@ -219,4 +222,23 @@ class LoginSerializer(TokenObtainPairSerializer):
                 },
             )
 
-        user = authenticate()
+        user = authenticate(**authentication_kwargs)
+        if user is not None:
+            self.user = user
+        else:
+            raise ValidationError(
+                {
+                    "success": False,
+                    "message": "This password or username isn't correct",
+                }
+            )
+
+    def validate(self, data):
+        self.auth_validate(data)
+        if self.user.auth_status not in [DONE, PHOTO_DONE]:
+            raise PermissionDenied("Siz login qila olmaysiz. Ruxsatingiz yo'q!")
+        data = self.user.token()
+        data["auth_status"] = self.user.auth_status
+        data["full_name"] = self.user.full_name
+
+        return data

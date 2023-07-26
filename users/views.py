@@ -9,12 +9,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes
 
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 from shared.utility import send_email
 
 from .serializers import (
     ChangeUserPhotoSerializer,
     SignUpSerializer,
     ChangeUserInformation,
+    LoginSerializer,
 )
 from .models import (
     VIA_EMAIL,
@@ -143,3 +146,7 @@ class ChangeUserPhotoView(APIView):
                 {"message": "Rasm muvaffaqiyatli o'zgartirildi"}, status=200
             )
         return Response(serializer.errors, status=400)
+
+
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer

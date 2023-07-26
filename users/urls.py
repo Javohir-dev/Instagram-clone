@@ -5,11 +5,13 @@ from .views import (
     GetNewVerification,
     ChangeUserInformationView,
     ChangeUserPhotoView,
+    LoginView,
 )
 from django.urls import path
 
 
 urlpatterns = [
+    path("login/", LoginView.as_view()),
     path("signup/", CreateUserView.as_view()),
     path("verify/", VerifyAPIView.as_view()),
     path("new-verify/", GetNewVerification.as_view()),
