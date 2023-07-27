@@ -1,7 +1,8 @@
 from django.utils.datetime_safe import datetime
 from django.shortcuts import render
+from django.core.exceptions import ObjectDoesNotExist
 
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework import permissions
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.generics import CreateAPIView, UpdateAPIView
@@ -23,6 +24,7 @@ from .serializers import (
     LoginRefreshSerializer,
     LogOutSerializer,
     ForgotPasswordSerializer,
+    ResetPasswordSerializer,
 )
 from .models import (
     VIA_EMAIL,
@@ -211,4 +213,31 @@ class ForgotPasswordView(APIView):
                 "user_status": user.auth_status,
             },
             status=200,
+        )
+
+
+class ResetPasswordView(UpdateAPIView):
+    serializer_class = ResetPasswordSerializer
+    permission_classes = [
+        IsAuthenticated,
+    ]
+    http_method_names = ["patch", "put"]
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        response = super(ResetPasswordView, self).update(request, *args, **kwargs)
+        try:
+            user = User.objects.get(id=response.data.get("id"))
+        except ObjectDoesNotExist as e:
+            raise NotFound(detail="User not found")
+
+        return Response(
+            {
+                "success": True,
+                "message": "You have successfully changed your password.",
+                "access": user.token()["access"],
+                "refresh": user.token()["refresh_token"],
+            }
         )
