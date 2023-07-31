@@ -34,7 +34,7 @@ class PostComment(BaseModel):
     )
 
     def __str__(self):
-        return f"comment by {self.author}"
+        return f"Author: {self.author}, Comment: {self.comment}"
 
 
 class PostLike(BaseModel):

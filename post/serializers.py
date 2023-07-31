@@ -16,7 +16,7 @@ class PostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     post_likes_count = serializers.SerializerMethodField("get_post_likes_count")
     post_comments_count = serializers.SerializerMethodField("get_post_comments_count")
-    me_liked = serializers.BooleanField("get_me_liked")
+    me_liked = serializers.SerializerMethodField("get_me_liked")
 
     class Meta:
         model = Post
@@ -26,10 +26,11 @@ class PostSerializer(serializers.ModelSerializer):
             "image",
             "caption",
             "created_time",
-            "post_likes",
-            "post_comments_counts",
+            "post_comments_count",
+            "post_likes_count",
             "me_liked",
         )
+        extra_kwargs = {"image": {"required": False}}
 
     def get_post_likes_count(self, obj):
         return obj.likes.count()
@@ -52,7 +53,7 @@ class CommentSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     author = UserSerializer(read_only=True)
     replies = serializers.SerializerMethodField("get_replies")
-    me_liked = serializers.BooleanField("get_me_liked")
+    me_liked = serializers.SerializerMethodField("get_me_liked")
     likes_count = serializers.SerializerMethodField("get_likes_count")
 
     class Meta:
