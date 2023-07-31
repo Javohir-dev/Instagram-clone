@@ -72,3 +72,38 @@ class PostRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
                 "message": "The post has been successfully deleted.",
             }
         )
+
+
+class PostCommentListView(generics.ListAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [
+        AllowAny,
+    ]
+
+    def get_queryset(self):
+        post_id = self.kwargs["pk"]
+        queryset = PostComment.objects.filter(post__id=post_id)
+        return queryset
+
+
+class PostCommentCreateView(generics.CreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def perform_create(self, serializer):
+        post_id = self.kwargs["pk"]
+        serializer.save(author=self.request.user, post_id=post_id)
+
+
+class CommentListCreateAPIView(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [
+        IsAuthenticatedOrReadOnly,
+    ]
+    queryset = PostComment.objects.all()
+    pagination_class = CustomPagination
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
