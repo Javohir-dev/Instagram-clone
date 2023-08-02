@@ -153,6 +153,17 @@ class LikeListView(generics.ListAPIView):
 class PostLikeAPIView(APIView):
     def post(self, request, pk):
         try:
+            post_like = PostLike.objects.get(author=self.request.user, post_id=pk)
+            post_like.delete()
+            serializer = PostLikeSerializer(post_like)
+            data = {
+                "success": True,
+                "message": "The like has been successfully deleted.",
+                "data": serializer.data,
+            }
+
+            return Response(data, status=status.HTTP_204_NO_CONTENT)
+        except PostLike.DoesNotExist:
             post_like = PostLike.objects.create(
                 author=self.request.user,
                 post_id=pk,
@@ -163,79 +174,79 @@ class PostLikeAPIView(APIView):
                 "message": "The like has been successfully added.",
                 "data": serializer.data,
             }
-            return Response(data, status=status.HTTP_201_CREATED)
-        except Exception as error:
-            data = {
-                "success": False,
-                "message": f"{str(error)}",
-                "data": None,
-            }
-            return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk):
-        try:
-            post_like = PostLike.objects.get(
-                author=self.request.user,
-                post_id=pk,
-            )
-            post_like.delete()
-            data = {
-                "success": True,
-                "message": "The like has been successfully deleted.",
-                "data": None,
-            }
             return Response(data, status=status.HTTP_204_NO_CONTENT)
-        except Exception as error:
-            data = {
-                "success": False,
-                "message": f"{str(error)}",
-                "data": None,
-            }
-            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class PostLikeAPIView(APIView):
+#     def post(self, request, pk):
+#         try:
+#             post_like = PostLike.objects.create(
+#                 author=self.request.user,
+#                 post_id=pk,
+#             )
+#             serializer = PostLikeSerializer(post_like)
+#             data = {
+#                 "success": True,
+#                 "message": "The like has been successfully added.",
+#                 "data": serializer.data,
+#             }
+#             return Response(data, status=status.HTTP_201_CREATED)
+#         except Exception as error:
+#             data = {
+#                 "success": False,
+#                 "message": f"{str(error)}",
+#                 "data": None,
+#             }
+#             return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+#     def delete(self, request, pk):
+#         try:
+#             post_like = PostLike.objects.get(
+#                 author=self.request.user,
+#                 post_id=pk,
+#             )
+#             post_like.delete()
+#             data = {
+#                 "success": True,
+#                 "message": "The like has been successfully deleted.",
+#                 "data": None,
+#             }
+#             return Response(data, status=status.HTTP_204_NO_CONTENT)
+#         except Exception as error:
+#             data = {
+#                 "success": False,
+#                 "message": f"{str(error)}",
+#                 "data": None,
+#             }
+#             return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CommentLikeAPIView(APIView):
     def post(self, request, pk):
         try:
+            comment_like = CommentLike.objects.get(
+                author=self.request.user, comment_id=pk
+            )
+            comment_like.delete()
+            serializer = CommentLikeSerializer(comment_like)
+            data = {
+                "success": True,
+                "message": "The like has been successfully deleted.",
+                "data": serializer.data,
+            }
+
+            return Response(data, status=status.HTTP_204_NO_CONTENT)
+        except CommentLike.DoesNotExist:
             comment_like = CommentLike.objects.create(
                 author=self.request.user,
                 comment_id=pk,
             )
             serializer = CommentLikeSerializer(comment_like)
-
             data = {
                 "success": True,
                 "message": "The like has been successfully added.",
                 "data": serializer.data,
             }
 
-            return Response(data, status=status.HTTP_201_CREATED)
-        except Exception as error:
-            data = {
-                "success": False,
-                "message": f"{str(error)}",
-                "data": None,
-            }
-
-            return Response(data, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        try:
-            comment_like = CommentLike.objects.get(
-                author=self.request.user,
-                comment_id=pk,
-            )
-            comment_like.delete()
-            data = {
-                "success": True,
-                "message": "The like has been successfully deleted.",
-                "data": None,
-            }
             return Response(data, status=status.HTTP_204_NO_CONTENT)
-        except Exception as error:
-            data = {
-                "success": False,
-                "message": f"{str(error)}",
-                "data": None,
-            }
-            return Response(data, status=status.HTTP_400_BAD_REQUEST)
